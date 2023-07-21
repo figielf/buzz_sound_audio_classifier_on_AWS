@@ -12,6 +12,18 @@ from sklearn.metrics import accuracy_score, precision_recall_fscore_support, con
 from typing import Dict, Union, List, Any
 
 
+def make_chunked_predictions(examples: torch.Tensor, 
+                     model: torch.nn.Module, 
+                     device: Union[str, torch.device],
+                     labels: torch.Tensor = None) -> Dict[str, Union[List[str], np.ndarray]]:
+
+    model = model.to(device)
+    with torch.no_grad():
+        logits = model(examples.to(device)).logits
+    predicted_class_id = [str(torch.argmax(item).item()) for item in logits]
+    return {'predicted_class_id': predicted_class_id, 'logits': logits}
+
+
 def make_predictions(examples: torch.Tensor, 
                      model: torch.nn.Module, 
                      device: Union[str, torch.device],
@@ -59,6 +71,7 @@ def compute_metrics(pred: Any) -> Dict[str, float]:
     precision, recall, f1, _ = precision_recall_fscore_support(labels, preds, average="macro")
     acc = accuracy_score(labels, preds)
     return {"accuracy": acc, "f1": f1, "precision": precision, "recall": recall}
+
 
 def plot_confusion_matrix(y_true: np.ndarray, 
                           y_preds: np.ndarray, 
