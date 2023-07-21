@@ -1,1 +1,0 @@
-s3://sagemaker-us-east-1-292159885427/baseline-ast-train/sm-training-custom-2023-07-12-10-12-03-372/output/model.tar.gz
