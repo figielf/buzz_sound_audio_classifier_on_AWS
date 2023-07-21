@@ -6,9 +6,30 @@ from datasets import Dataset
 
 from preprocessing import preprocess_audio_arrays
 from gdsc_eval import make_chunked_predictions
+from transformers import ASTFeatureExtractor
+from typing import Tuple
 
 
-def predict_with_chunking(model, feature_extractor, test_dataset, chunk_size, min_chunk_size):
+def predict_with_chunking(model: torch.nn.Module, 
+                          feature_extractor: ASTFeatureExtractor, 
+                          test_dataset: Dataset, 
+                          chunk_size: int, 
+                          min_chunk_size: int)->pd.DataFrame:
+    """
+    Split the test dataset into chunks of length 'chunk_size', makes prediction for chunked test dataset and aggregates the results using three approaches: majority voting, average logits and avarage probabilities. Aggregation is done by calling 'get_agregated_results' function.
+
+    Args:
+        model (torch.nn.Module): trained model to use.
+        feature_extractor (ASTFeatureExtractor): the feature extractor to use for preprocessing.
+        test_dataset (Dataset): the test dataset.
+        chunk_size (int): the chunk's length.
+        min_chunk_size (int): length of the remaining part of the file that will be ignored (if after splitting the last part of the file is shorter than 'max_chunk_size' it will be ignored).
+
+    Returns:
+        pd.DataFrame: a pandas dataframe with the results.
+
+    """
+    
     chunks = []
     total = 0
     for i, x in enumerate(test_dataset):
@@ -48,7 +69,21 @@ def predict_with_chunking(model, feature_extractor, test_dataset, chunk_size, mi
     return get_agregated_results(chunked_one_file_dataset_encoded.to_pandas())
     
 
-def get_agregated_results(predictions_df):
+def get_agregated_results(predictions_df: pd.DataFrame)-> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    
+    """
+    Aggregates prediction using three approaches: majority voting, logits, probabilities
+     - majority voting: selects the majority class, if tie, just takes the first encountered class
+     - logits: sums up the logits (which is equivalent to taking an average) and selects the class with the biggest logit value
+     - probabilities: sums up the probabilities (which is equivalent to taking an average) and selects the class with the biggest probability value.
+
+    Args:
+        predictions_df (pd.DataFrame): data frame with predictions to be aggregated.
+
+    Returns:
+        Tuple: a tuple of three dataframes that contain the aggregated result using three approaches: majority voting, logits, probabilities
+
+    """    
     # logits
     logits = predictions_df.groupby('file_name').logits.sum().apply(lambda x: np.argmax(x)).reset_index()
     logits.columns = ['file_name', 'predicted_class_id']
