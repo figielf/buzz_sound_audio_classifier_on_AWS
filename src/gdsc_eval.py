@@ -16,6 +16,18 @@ def make_chunked_predictions(examples: torch.Tensor,
                      model: torch.nn.Module, 
                      device: Union[str, torch.device],
                      labels: torch.Tensor = None) -> Dict[str, Union[List[str], np.ndarray]]:
+    """
+    A modification of 'make_predictions' function. Instead of the pair of keys 'predicted_class_id', 'loss' it returns the pair 'predicted_class_id' and 'logits'.
+
+    Args:
+        examples (torch.Tensor): A tensor of shape (batch_size, sequence_length) containing input examples.
+        model (torch.nn.Module): A PyTorch model to use for making predictions.
+        device (str or torch.device): The device to use for running the model (e.g. 'cpu' or 'cuda').        
+        labels (torch.Tensor): A tensor of shape (batch_size,) containing ground-truth labels.
+
+    Returns:
+        dict: A dictionary containing two keys: 'predicted_class_id' and 'logits'.
+    """    
 
     model = model.to(device)
     with torch.no_grad():
